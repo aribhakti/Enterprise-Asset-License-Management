@@ -1,0 +1,8 @@
+{
+  "name": "SubGuard",
+  "description": "A futuristic subscription management dashboard for business owners to track recurring payments and never miss an invoice.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
