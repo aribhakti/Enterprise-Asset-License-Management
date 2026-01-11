@@ -4,7 +4,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SubGuard | Master Your Money</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>SubGuard | Enterprise Asset & License Management</title>
+    <meta name="title" content="SubGuard | Enterprise Asset & License Management">
+    <meta name="description" content="The financial control system for modern IT assets. Track SaaS, Hardware, and Cloud spend, automate renewals, and prevent shadow IT.">
+    <meta name="keywords" content="SaaS Management, IT Asset Management, FinOps, Subscription Tracker, Enterprise Software, License Management">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="SubGuard Inc.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://subguard.io/">
+    <meta property="og:title" content="SubGuard | Master Your Financial Perimeter">
+    <meta property="og:description" content="Stop the bleeding. Start the control. The first unified registry for SaaS, Cloud, and Hardware assets.">
+    <meta property="og:image" content="https://subguard.io/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://subguard.io/">
+    <meta property="twitter:title" content="SubGuard | Master Your Financial Perimeter">
+    <meta property="twitter:description" content="Stop the bleeding. Start the control. The first unified registry for SaaS, Cloud, and Hardware assets.">
+    <meta property="twitter:image" content="https://subguard.io/og-image.jpg">
+
+    <!-- Performance: Preconnect -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -27,6 +55,7 @@
             overflow-x: hidden;
             margin: 0;
         }
+        /* Optimized Gradients */
         .mesh-gradient {
             background: 
                 radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.25) 0px, transparent 50%),
@@ -65,17 +94,18 @@
             z-index: -1;
             opacity: 0.6;
             pointer-events: none;
+            /* Performance Optimization: Promote to hardware layer */
+            will-change: transform; 
         }
         @keyframes float-around {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(40px, -60px) scale(1.1); }
-            66% { transform: translate(-30px, 30px) scale(0.9); }
-            100% { transform: translate(0, 0) scale(1); }
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            33% { transform: translate3d(40px, -60px, 0) scale(1.1); }
+            66% { transform: translate3d(-30px, 30px, 0) scale(0.9); }
+            100% { transform: translate3d(0, 0, 0) scale(1); }
         }
         .animate-float-slow { animation: float-around 20s infinite ease-in-out; }
         .animate-float-fast { animation: float-around 12s infinite ease-in-out; }
         
-        /* New Micro-interaction Classes */
         .hover-shine {
             position: relative;
             overflow: hidden;

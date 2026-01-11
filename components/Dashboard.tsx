@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { User, Asset, Status, AssetType, Request, AuditLog, PeriodType, DashboardConfig, Role, TeamMember, Permission } from '../types';
+import { User, Asset, Status, AssetType, Request, AuditLog, PeriodType, DashboardConfig, Role, TeamMember, Permission, VendorProfile } from '../types';
 import { 
   LogOut, Plus, Search, Filter, 
   CreditCard, TrendingUp, Calendar as CalendarIcon, Zap, 
@@ -9,7 +9,7 @@ import {
   BrainCircuit, Sparkles, AlertCircle, Home, Layout, Bell, Clock,
   User as UserIcon, Settings, ChevronDown, SortAsc, FilterX, X, Save, ShieldCheck, Shield, Eye, EyeOff, Palette, Database, History as HistoryIcon,
   Server, Monitor, Box, FileText, CheckCircle2, XCircle, Cloud, Link, FileCheck, Layers, Download, Siren, Send, MessageSquare, CalendarDays, RefreshCw,
-  HelpCircle, Globe, AreaChart as AreaChartIcon, CheckSquare, Users, Lock, Unlock, Briefcase
+  HelpCircle, Globe, AreaChart as AreaChartIcon, CheckSquare, Users, Lock, Unlock, Briefcase, Command, MousePointer2, Building, Mail, Phone
 } from 'lucide-react';
 import { SubscriptionTable } from './SubscriptionTable';
 import { SubscriptionForm } from './SubscriptionForm';
@@ -18,7 +18,7 @@ import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 import { GoogleGenAI } from "@google/genai";
 import { CATEGORIES as INITIAL_CATEGORIES, DEPARTMENTS, MONTHS, INITIAL_ROLES, INITIAL_TEAM, PERMISSIONS } from '../constants';
 
-type ViewType = 'overview' | 'registry' | 'licenses' | 'hardware' | 'calendar' | 'burn' | 'requests' | 'compliance' | 'finops' | 'admin' | 'risk' | 'users';
+type ViewType = 'overview' | 'registry' | 'licenses' | 'hardware' | 'calendar' | 'burn' | 'requests' | 'compliance' | 'finops' | 'admin' | 'risk' | 'users' | 'vendors';
 type SortType = 'name' | 'amount' | 'date';
 
 interface DashboardProps {
@@ -38,6 +38,21 @@ interface ChatMessage {
   text: string;
 }
 
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+interface CommandItem {
+  id: string;
+  label: string;
+  group: string;
+  icon: React.ReactNode;
+  action: () => void;
+  shortcut?: string;
+}
+
 export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, logs, onUpdate, onRequestUpdate, onLogUpdate, onSignOut, onUserUpdate }) => {
   const [activeView, setActiveView] = useState<ViewType>('overview');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -53,6 +68,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
   // Bulk Selection State
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
 
+  // Toast State
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  // Command Palette State
+  const [isCmdOpen, setIsCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState('');
+  const [cmdIndex, setCmdIndex] = useState(0);
+  const cmdInputRef = useRef<HTMLInputElement>(null);
+
   // User Management State with Persistence
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => {
     const saved = localStorage.getItem('subguard_team');
@@ -63,6 +87,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
     return saved ? JSON.parse(saved) : INITIAL_ROLES;
   });
 
+  // Vendor State
+  const [vendorProfiles, setVendorProfiles] = useState<VendorProfile[]>(() => {
+    const saved = localStorage.getItem('subguard_vendors');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [editingVendor, setEditingVendor] = useState<VendorProfile | null>(null);
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+
   // Save changes to localStorage
   useEffect(() => {
     localStorage.setItem('subguard_team', JSON.stringify(teamMembers));
@@ -71,6 +103,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
   useEffect(() => {
     localStorage.setItem('subguard_roles', JSON.stringify(roles));
   }, [roles]);
+
+  useEffect(() => {
+    localStorage.setItem('subguard_vendors', JSON.stringify(vendorProfiles));
+  }, [vendorProfiles]);
 
   const [activeUserTab, setActiveUserTab] = useState<'members' | 'roles'>('members');
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -100,6 +136,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
       enableCheckerMaker: false,
       checkerThreshold: 10000000,
       checkerRole: 'manager',
+      checkerActions: ['create', 'delete'],
 
       language: 'English',
       enableRtl: false,
@@ -190,6 +227,84 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
   
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  // Toast Helper
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
+
+  // Command Palette Logic
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsCmdOpen(prev => !prev);
+        setCmdQuery('');
+        setCmdIndex(0);
+      }
+      if (e.key === 'Escape') {
+        setIsCmdOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (isCmdOpen && cmdInputRef.current) {
+      setTimeout(() => cmdInputRef.current?.focus(), 50);
+    }
+  }, [isCmdOpen]);
+
+  const commands: CommandItem[] = useMemo(() => [
+    // Navigation
+    { id: 'nav-overview', label: 'Go to Overview', group: 'Navigation', icon: <Home className="w-4 h-4" />, action: () => setActiveView('overview') },
+    { id: 'nav-registry', label: 'Go to Registry', group: 'Navigation', icon: <Database className="w-4 h-4" />, action: () => setActiveView('registry') },
+    { id: 'nav-vendors', label: 'Vendor Intelligence Hub', group: 'Navigation', icon: <Building className="w-4 h-4" />, action: () => setActiveView('vendors') },
+    { id: 'nav-calendar', label: 'Go to Fiscal Calendar', group: 'Navigation', icon: <CalendarDays className="w-4 h-4" />, action: () => setActiveView('calendar') },
+    { id: 'nav-requests', label: 'View Requests', group: 'Navigation', icon: <FileCheck className="w-4 h-4" />, action: () => setActiveView('requests') },
+    { id: 'nav-users', label: 'User Management', group: 'Navigation', icon: <Users className="w-4 h-4" />, action: () => setActiveView('users') },
+    { id: 'nav-settings', label: 'Settings & Admin', group: 'Navigation', icon: <Settings className="w-4 h-4" />, action: () => setActiveView('admin') },
+    
+    // Actions
+    { id: 'act-add', label: 'Add New Asset', group: 'Actions', icon: <Plus className="w-4 h-4" />, action: () => { setEditingAsset(null); setIsFormOpen(true); } },
+    { id: 'act-export', label: 'Export Data CSV', group: 'Actions', icon: <Download className="w-4 h-4" />, action: () => handleExport() },
+    { id: 'act-add-user', label: 'Invite Team Member', group: 'Actions', icon: <UserIcon className="w-4 h-4" />, action: () => { setActiveView('users'); setIsUserModalOpen(true); } },
+    
+    // Preferences
+    { id: 'pref-theme', label: `Switch to ${config.darkMode ? 'Light' : 'Dark'} Mode`, group: 'Preferences', icon: config.darkMode ? <Zap className="w-4 h-4" /> : <Monitor className="w-4 h-4" />, action: () => setConfig(prev => ({...prev, darkMode: !prev.darkMode})) },
+    { id: 'pref-currency', label: `Switch Currency to ${config.currency === 'IDR' ? 'USD' : 'IDR'}`, group: 'Preferences', icon: <CreditCard className="w-4 h-4" />, action: () => setConfig(prev => ({...prev, currency: prev.currency === 'IDR' ? 'USD' : 'IDR'})) },
+  ], [config.darkMode, config.currency]);
+
+  const filteredCommands = useMemo(() => {
+    return commands.filter(c => c.label.toLowerCase().includes(cmdQuery.toLowerCase()));
+  }, [commands, cmdQuery]);
+
+  useEffect(() => {
+    const handleNav = (e: KeyboardEvent) => {
+      if (!isCmdOpen) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setCmdIndex(prev => Math.min(prev + 1, filteredCommands.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setCmdIndex(prev => Math.max(prev - 1, 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (filteredCommands[cmdIndex]) {
+           filteredCommands[cmdIndex].action();
+           setIsCmdOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleNav);
+    return () => window.removeEventListener('keydown', handleNav);
+  }, [isCmdOpen, filteredCommands, cmdIndex]);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -295,6 +410,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
        .map(([k,v]) => ({ name: k, value: v }));
   }, [assets]);
 
+  // Aggregated Vendors for Hub View
+  const uniqueVendors = useMemo(() => {
+    const vMap: Record<string, { spend: number, count: number, assets: Asset[], profile?: VendorProfile }> = {};
+    assets.forEach(a => {
+        if(!a.vendor) return;
+        if (!vMap[a.vendor]) {
+            vMap[a.vendor] = { 
+                spend: 0, 
+                count: 0, 
+                assets: [],
+                profile: vendorProfiles.find(p => p.name === a.vendor)
+            };
+        }
+        vMap[a.vendor].spend += a.amount;
+        vMap[a.vendor].count++;
+        vMap[a.vendor].assets.push(a);
+    });
+    return Object.entries(vMap)
+       .map(([name, data]) => ({ name, ...data }))
+       .sort((a,b) => b.spend - a.spend);
+  }, [assets, vendorProfiles]);
+
   // Upcoming renewals for notifications
   const alerts = useMemo(() => {
     const today = new Date();
@@ -330,7 +467,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
     if (filterDept !== 'All') result = result.filter(a => a.department === filterDept);
     
     // Default sorting if not risk view
-    if (activeView !== 'risk' && activeView !== 'calendar') {
+    if (activeView !== 'risk' && activeView !== 'calendar' && activeView !== 'vendors') {
       result.sort((a, b) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name);
         if (sortBy === 'amount') return b.amount - a.amount;
@@ -398,6 +535,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
         details: `${action} request for ${req.item} (${formatCurrency(req.cost)})`
       };
       onLogUpdate([log, ...logs]);
+      showToast(`Request ${action} successfully`, action === 'Approved' ? 'success' : 'info');
     }
   };
 
@@ -409,6 +547,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
          next.delete(id);
          return next;
       });
+      showToast('Asset decommissioned successfully', 'success');
     }
   };
 
@@ -417,6 +556,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
      if(confirm(`Are you sure you want to decommission ${selectedAssetIds.size} assets?`)) {
         onUpdate(assets.filter(a => !selectedAssetIds.has(a.id)));
         setSelectedAssetIds(new Set());
+        showToast('Bulk deletion complete', 'success');
      }
   };
 
@@ -424,6 +564,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
      if(selectedAssetIds.size === 0) return;
      onUpdate(assets.map(a => selectedAssetIds.has(a.id) ? { ...a, status: newStatus } : a));
      setSelectedAssetIds(new Set());
+     showToast(`Updated status to ${newStatus}`, 'success');
   };
 
   const handleExport = () => {
@@ -448,8 +589,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      showToast('Registry exported successfully', 'success');
     } catch (e) {
-      alert("Export failed.");
+      showToast('Export failed. Please try again.', 'error');
     }
   };
 
@@ -477,16 +619,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
         details: `Renewed until ${newDate.toISOString().split('T')[0]}`
      };
      onLogUpdate([log, ...logs]);
+     showToast(`Renewed ${asset.name} successfully`, 'success');
   };
 
   const handleFormSubmit = (data: Asset) => {
     if (editingAsset) {
       onUpdate(assets.map(a => a.id === editingAsset.id ? data : a));
+      showToast('Asset updated successfully', 'success');
     } else {
       onUpdate([...assets, { ...data, id: Math.random().toString(36).substr(2, 9) }]);
+      showToast('New asset registered', 'success');
     }
     setIsFormOpen(false);
     setEditingAsset(null);
+  };
+
+  const handleVendorSave = () => {
+    if (!editingVendor) return;
+    const exists = vendorProfiles.some(v => v.name === editingVendor.name);
+    if (exists) {
+        setVendorProfiles(prev => prev.map(v => v.name === editingVendor.name ? editingVendor : v));
+    } else {
+        setVendorProfiles(prev => [...prev, editingVendor]);
+    }
+    setIsVendorModalOpen(false);
+    setEditingVendor(null);
+    showToast('Vendor profile updated', 'success');
   };
 
   const handleEditProfileClick = () => {
@@ -498,6 +656,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
   const handleSaveProfile = () => {
     onUserUpdate(tempUser);
     setIsEditProfileOpen(false);
+    showToast('Profile updated', 'success');
   };
 
   const formatCurrency = (val: number) => {
@@ -523,14 +682,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
   const saveRole = () => {
      if(!editingRole) return;
      setRoles(prev => prev.map(r => r.id === editingRole.id ? editingRole : r));
-     // Optional: setEditingRole(null); if you want to close the editor
-     alert("Role settings saved successfully.");
+     showToast("Role configuration saved", 'success');
   };
 
   // Add User/Role Handlers
   const handleAddMember = () => {
     if (!newMember.name || !newMember.email) {
-      alert("Please fill in Name and Email.");
+      showToast("Please fill in Name and Email", 'error');
       return;
     }
     const member: TeamMember = {
@@ -545,11 +703,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
     setTeamMembers([...teamMembers, member]);
     setIsUserModalOpen(false);
     setNewMember({ name: '', email: '', roleId: 'viewer', department: DEPARTMENTS[0], status: 'Active' });
+    showToast(`Invited ${member.name} to the team`, 'success');
   };
 
   const handleAddRole = () => {
     if (!newRoleData.name) {
-      alert("Role Name is required.");
+      showToast("Role Name is required", 'error');
       return;
     }
     const newId = newRoleData.name.toLowerCase().replace(/\s+/g, '_');
@@ -564,17 +723,90 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
     setNewRoleData({ name: '', description: '', permissions: [] });
     // Automatically select for editing
     setEditingRole(role);
+    showToast(`Role ${role.name} created`, 'success');
   };
 
   // Delete User Logic
   const handleDeleteMember = (id: string) => {
     if(confirm('Remove this user from the team?')) {
       setTeamMembers(teamMembers.filter(m => m.id !== id));
+      showToast("User removed", 'info');
     }
   };
 
   return (
     <div className={`flex h-screen overflow-hidden ${config.softMode ? 'bg-[#F9FAFB]' : 'bg-slate-100'}`}>
+      {/* Toast Container */}
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div key={toast.id} className={`pointer-events-auto min-w-[300px] p-4 rounded-xl border shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-10 fade-in duration-300 ${
+            toast.type === 'success' ? 'bg-white border-emerald-100 text-emerald-700' :
+            toast.type === 'error' ? 'bg-white border-rose-100 text-rose-700' :
+            'bg-white border-slate-100 text-slate-700'
+          }`}>
+             <div className={`p-1.5 rounded-full ${
+                toast.type === 'success' ? 'bg-emerald-100' :
+                toast.type === 'error' ? 'bg-rose-100' : 'bg-slate-100'
+             }`}>
+                {toast.type === 'success' && <CheckCircle2 className="w-4 h-4" />}
+                {toast.type === 'error' && <AlertCircle className="w-4 h-4" />}
+                {toast.type === 'info' && <Bell className="w-4 h-4" />}
+             </div>
+             <p className="text-xs font-black uppercase tracking-wide">{toast.message}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Command Palette Modal */}
+      {isCmdOpen && (
+        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh] px-4">
+           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsCmdOpen(false)}></div>
+           <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden relative z-10 animate-in zoom-in-95 duration-100">
+              <div className="flex items-center gap-3 p-4 border-b border-slate-100">
+                 <Search className="w-5 h-5 text-slate-400" />
+                 <input 
+                    ref={cmdInputRef}
+                    type="text" 
+                    placeholder="Type a command or search..."
+                    value={cmdQuery}
+                    onChange={(e) => { setCmdQuery(e.target.value); setCmdIndex(0); }}
+                    className="flex-1 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none"
+                 />
+                 <span className="text-[10px] font-black text-slate-300 bg-slate-50 border border-slate-200 px-2 py-1 rounded">ESC</span>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto p-2">
+                 {filteredCommands.length > 0 ? (
+                    filteredCommands.map((cmd, idx) => (
+                       <button 
+                          key={cmd.id}
+                          onClick={() => { cmd.action(); setIsCmdOpen(false); }}
+                          onMouseEnter={() => setCmdIndex(idx)}
+                          className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors ${idx === cmdIndex ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                       >
+                          <div className="flex items-center gap-3">
+                             {cmd.icon}
+                             <div className="text-left">
+                                <p className="text-xs font-black uppercase tracking-wide">{cmd.label}</p>
+                             </div>
+                          </div>
+                          {cmd.group && <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{cmd.group}</span>}
+                       </button>
+                    ))
+                 ) : (
+                    <div className="p-8 text-center text-slate-400 text-xs font-medium">No commands found.</div>
+                 )}
+              </div>
+              <div className="p-2 bg-slate-50 border-t border-slate-100 flex justify-between px-4">
+                 <span className="text-[10px] font-bold text-slate-400">ProTip: Use arrows to navigate</span>
+                 <div className="flex gap-2">
+                    <Command className="w-3 h-3 text-slate-300" />
+                    <span className="text-[10px] font-black text-slate-300">Cmd+K</span>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Sidebar Navigation */}
       <aside className={`w-20 lg:w-64 border-r border-slate-100 flex flex-col p-6 z-20 relative transition-all duration-300 
          ${config.sidebarTransparent ? 'bg-transparent' : (config.softMode ? 'bg-white' : 'bg-white/80 backdrop-blur-md')}
@@ -590,6 +822,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
           <SidebarLink icon={<Home className="w-5 h-5" />} label="Overview" active={activeView === 'overview'} onClick={() => setActiveView('overview')} />
           <SidebarLink icon={<Database className="w-5 h-5" />} label="Registry (All)" active={activeView === 'registry'} onClick={() => setActiveView('registry')} />
           <SidebarLink icon={<Server className="w-5 h-5" />} label="Licenses & SaaS" active={activeView === 'licenses'} onClick={() => setActiveView('licenses')} />
+          <SidebarLink icon={<Building className="w-5 h-5" />} label="Vendor Hub" active={activeView === 'vendors'} onClick={() => setActiveView('vendors')} />
           <SidebarLink icon={<CalendarDays className="w-5 h-5" />} label="Fiscal Calendar" active={activeView === 'calendar'} onClick={() => setActiveView('calendar')} />
           <SidebarLink icon={<Monitor className="w-5 h-5" />} label="Hardware" active={activeView === 'hardware'} onClick={() => setActiveView('hardware')} />
           <div className="pt-4 mt-4 border-t border-slate-50">
@@ -621,7 +854,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 animate-in slide-in-from-top-4 duration-500">
           <div className="space-y-1">
             <h2 key={activeView} className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none animate-in fade-in slide-in-from-left-2 duration-300">
-              {activeView === 'registry' ? 'Master Asset Registry' : activeView === 'risk' ? 'Risk & Obligations' : activeView === 'licenses' ? 'License Management' : activeView === 'finops' ? 'Cloud Cost Optimization' : activeView === 'calendar' ? 'Fiscal Timeline' : activeView === 'admin' ? 'System Settings' : activeView === 'users' ? 'User Management' : activeView}
+              {activeView === 'registry' ? 'Master Asset Registry' : activeView === 'risk' ? 'Risk & Obligations' : activeView === 'licenses' ? 'License Management' : activeView === 'finops' ? 'Cloud Cost Optimization' : activeView === 'calendar' ? 'Fiscal Timeline' : activeView === 'admin' ? 'System Settings' : activeView === 'users' ? 'User Management' : activeView === 'vendors' ? 'Vendor Intelligence' : activeView}
             </h2>
             <p className="text-slate-400 font-bold text-[13px] uppercase tracking-widest">
               Protocol v2.5 • <span className="text-indigo-600">{filteredAssets.length}</span> Assets Tracked
@@ -653,6 +886,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
                 className="bg-white border border-slate-100 rounded-2xl py-2.5 pl-10 pr-6 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-100 w-48 lg:w-64 shadow-sm transition-all"
               />
             </div>
+
+            <button 
+               onClick={() => setIsCmdOpen(true)}
+               className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all"
+               title="Command Palette (Cmd+K)"
+            >
+               <Command className="w-4 h-4" />
+               <span className="text-[10px] font-black">Cmd+K</span>
+            </button>
 
             {/* Notification Bell */}
             <div className="relative" ref={notifRef}>
@@ -889,6 +1131,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
           </div>
         )}
 
+        {/* --- VENDORS VIEW --- */}
+        {activeView === 'vendors' && (
+           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {uniqueVendors.map((vendor, idx) => (
+                    <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 group relative overflow-hidden">
+                       <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-3">
+                             <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-lg font-black group-hover:bg-indigo-600 transition-colors">
+                                {vendor.name.charAt(0)}
+                             </div>
+                             <div>
+                                <h3 className="font-black text-sm text-slate-900 truncate max-w-[120px]">{vendor.name}</h3>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{vendor.count} Assets</p>
+                             </div>
+                          </div>
+                          {vendor.profile?.tier ? (
+                             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${
+                                vendor.profile.tier === 'Strategic' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 
+                                vendor.profile.tier === 'Preferred' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                'bg-slate-50 text-slate-500 border-slate-200'
+                             }`}>
+                                {vendor.profile.tier}
+                             </span>
+                          ) : (
+                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Unclassified</span>
+                          )}
+                       </div>
+                       
+                       <div className="space-y-3 mb-6">
+                          <div className="flex justify-between items-center text-xs">
+                             <span className="font-bold text-slate-500">Total Spend</span>
+                             <span className="font-black text-slate-900">{formatCurrency(vendor.spend)}</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                             <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(100, (vendor.spend / (stats.totalValue || 1)) * 100)}%` }}></div>
+                          </div>
+                       </div>
+
+                       <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
+                          <button 
+                             onClick={() => {
+                                setEditingVendor(vendor.profile || { id: Math.random().toString(36), name: vendor.name, tier: 'Transactional' });
+                                setIsVendorModalOpen(true);
+                             }}
+                             className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                          >
+                             Manage Profile
+                          </button>
+                       </div>
+                    </div>
+                 ))}
+                 
+                 {/* Empty State / Add New Placeholder if needed, but vendors are derived from assets usually */}
+              </div>
+           </div>
+        )}
+
         {/* --- USERS & ROLES VIEW --- */}
         {activeView === 'users' && (
            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -936,7 +1236,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
                                   <span className="text-xs font-bold text-slate-700 capitalize">
                                      {roles.find(r => r.id === m.roleId)?.name || m.roleId}
                                   </span>
-                               </div>
+                                </div>
                             </td>
                             <td className="px-6 py-6">
                                <div className="flex items-center gap-2">
@@ -1228,6 +1528,101 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, assets, requests, lo
           departments={config.departments}
           currency={config.currency}
         />
+      )}
+
+      {/* Vendor Edit Modal */}
+      {isVendorModalOpen && editingVendor && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsVendorModalOpen(false)}></div>
+            <div className="w-full max-w-md h-full bg-white relative z-10 shadow-2xl p-8 animate-in slide-in-from-right duration-300 overflow-y-auto">
+               <div className="flex justify-between items-center mb-8">
+                  <div>
+                     <h3 className="text-xl font-black text-slate-900">Vendor Profile</h3>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{editingVendor.name}</p>
+                  </div>
+                  <button onClick={() => setIsVendorModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
+               </div>
+
+               <div className="space-y-6">
+                  <div>
+                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Relationship Tier</label>
+                     <div className="grid grid-cols-2 gap-2 mt-2">
+                        {['Strategic', 'Preferred', 'Transactional', 'Restricted'].map(tier => (
+                           <button 
+                              key={tier}
+                              onClick={() => setEditingVendor({...editingVendor, tier: tier as any})}
+                              className={`py-2 px-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${editingVendor.tier === tier ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                           >
+                              {tier}
+                           </button>
+                        ))}
+                     </div>
+                  </div>
+
+                  <div>
+                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Contacts</label>
+                     <div className="space-y-3 mt-2">
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+                           <Mail className="w-4 h-4 text-slate-300" />
+                           <input 
+                              placeholder="support@vendor.com" 
+                              value={editingVendor.supportEmail || ''}
+                              onChange={(e) => setEditingVendor({...editingVendor, supportEmail: e.target.value})}
+                              className="bg-transparent w-full text-xs font-bold focus:outline-none"
+                           />
+                        </div>
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+                           <Globe className="w-4 h-4 text-slate-300" />
+                           <input 
+                              placeholder="vendor.com/help" 
+                              value={editingVendor.website || ''}
+                              onChange={(e) => setEditingVendor({...editingVendor, website: e.target.value})}
+                              className="bg-transparent w-full text-xs font-bold focus:outline-none"
+                           />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div>
+                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Manager</label>
+                     <div className="space-y-3 mt-2">
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+                           <UserIcon className="w-4 h-4 text-slate-300" />
+                           <input 
+                              placeholder="Manager Name" 
+                              value={editingVendor.contactName || ''}
+                              onChange={(e) => setEditingVendor({...editingVendor, contactName: e.target.value})}
+                              className="bg-transparent w-full text-xs font-bold focus:outline-none"
+                           />
+                        </div>
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+                           <Mail className="w-4 h-4 text-slate-300" />
+                           <input 
+                              placeholder="manager@vendor.com" 
+                              value={editingVendor.contactEmail || ''}
+                              onChange={(e) => setEditingVendor({...editingVendor, contactEmail: e.target.value})}
+                              className="bg-transparent w-full text-xs font-bold focus:outline-none"
+                           />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div>
+                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Notes</label>
+                     <textarea 
+                        value={editingVendor.notes || ''}
+                        onChange={(e) => setEditingVendor({...editingVendor, notes: e.target.value})}
+                        className="w-full mt-2 bg-slate-50 border border-slate-100 rounded-xl p-4 h-24 resize-none text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
+                        placeholder="MSA details, discount terms..."
+                     />
+                  </div>
+               </div>
+
+               <div className="absolute bottom-0 left-0 w-full p-8 border-t border-slate-100 bg-white">
+                  <button onClick={handleVendorSave} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg">Save Profile</button>
+               </div>
+            </div>
+        </div>
       )}
 
       {/* Edit Profile Modal */}

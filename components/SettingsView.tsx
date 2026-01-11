@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { 
   Layout, Type, Building, CreditCard, Save, Upload, 
   Check, Globe, Moon, Sun, Monitor, FileText, ToggleLeft, ToggleRight, 
-  ChevronRight, Banknote, Mail, Clock, ShieldCheck, UserCheck
+  ChevronRight, Banknote, Mail, Clock, ShieldCheck, UserCheck, Lock
 } from 'lucide-react';
 import { DashboardConfig } from '../types';
 
@@ -18,6 +18,7 @@ export const SettingsView: React.FC<SettingsProps> = ({ config, onConfigChange }
   const tabs = [
     { id: 'brand', label: 'Brand Settings', icon: <Layout className="w-4 h-4" /> },
     { id: 'system', label: 'System Settings', icon: <Type className="w-4 h-4" /> },
+    { id: 'governance', label: 'Governance & Security', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'company', label: 'Company Settings', icon: <Building className="w-4 h-4" /> },
     { id: 'currency', label: 'Currency Settings', icon: <Banknote className="w-4 h-4" /> },
     { id: 'email', label: 'Email Settings', icon: <Mail className="w-4 h-4" /> },
@@ -52,6 +53,7 @@ export const SettingsView: React.FC<SettingsProps> = ({ config, onConfigChange }
         <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
           {activeTab === 'brand' && <BrandSettings config={config} onChange={onConfigChange} />}
           {activeTab === 'system' && <SystemSettings config={config} onChange={onConfigChange} />}
+          {activeTab === 'governance' && <GovernanceSettings config={config} onChange={onConfigChange} />}
           {activeTab === 'company' && <CompanySettings config={config} onChange={onConfigChange} />}
           {activeTab === 'currency' && <CurrencySettings config={config} onChange={onConfigChange} />}
           {activeTab === 'email' && <EmailSettings config={config} onChange={onConfigChange} />}
@@ -155,39 +157,6 @@ const SystemSettings = ({ config, onChange }: { config: DashboardConfig, onChang
         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Configure global formats and prefixes</p>
       </div>
 
-      {/* Checker-Maker Flow Settings */}
-      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 transition-all">
-         <div className="flex justify-between items-center mb-6">
-            <div className="flex items-start gap-4">
-               <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
-                  <UserCheck className="w-6 h-6" />
-               </div>
-               <div>
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Checker-Maker Flow</h4>
-                  <p className="text-[10px] font-bold text-slate-400 mt-1">Require secondary approval for high-value transactions or critical changes.</p>
-               </div>
-            </div>
-            <ToggleSwitch isOn={config.enableCheckerMaker} onToggle={() => onChange({...config, enableCheckerMaker: !config.enableCheckerMaker})} />
-         </div>
-         
-         {config.enableCheckerMaker && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-200 animate-in slide-in-from-top-2 duration-300">
-               <InputGroup 
-                  label={`Minimum Threshold (${config.currency})`} 
-                  type="number"
-                  value={config.checkerThreshold.toString()} 
-                  onChange={(v) => onChange({...config, checkerThreshold: parseFloat(v) || 0})} 
-               />
-               <SelectGroup 
-                  label="Approver Role" 
-                  value={config.checkerRole} 
-                  onChange={(v) => onChange({...config, checkerRole: v})} 
-                  options={['manager', 'admin', 'finance_lead']} 
-               />
-            </div>
-         )}
-      </div>
-
       <div className="grid md:grid-cols-2 gap-6">
          <SelectGroup label="Date Format" value={config.dateFormat} onChange={(v) => onChange({...config, dateFormat: v})} options={['Jan 1, 2025', '01/01/2025', '2025-01-01']} />
          <SelectGroup label="Time Format" value={config.timeFormat} onChange={(v) => onChange({...config, timeFormat: v})} options={['12 Hours (AM/PM)', '24 Hours']} />
@@ -222,6 +191,111 @@ const SystemSettings = ({ config, onChange }: { config: DashboardConfig, onChang
    );
 };
 
+const GovernanceSettings = ({ config, onChange }: { config: DashboardConfig, onChange: (c: DashboardConfig) => void }) => {
+   const toggleAction = (action: string) => {
+      const current = config.checkerActions || [];
+      const updated = current.includes(action) 
+         ? current.filter(a => a !== action)
+         : [...current, action];
+      onChange({...config, checkerActions: updated});
+   };
+
+   return (
+      <div className="p-8 space-y-8">
+         <div className="border-b border-slate-50 pb-6 mb-6">
+            <h3 className="text-xl font-black text-slate-900 uppercase">Governance & Security</h3>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Control approvals, access, and security policies</p>
+         </div>
+
+         {/* Checker-Maker Flow Settings */}
+         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 transition-all">
+            <div className="flex justify-between items-center mb-6">
+               <div className="flex items-start gap-4">
+                  <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                     <UserCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Checker-Maker Protocol</h4>
+                     <p className="text-[10px] font-bold text-slate-400 mt-1 max-w-sm">Require secondary approval for sensitive actions. Makers initiate, Checkers approve.</p>
+                  </div>
+               </div>
+               <ToggleSwitch isOn={config.enableCheckerMaker} onToggle={() => onChange({...config, enableCheckerMaker: !config.enableCheckerMaker})} />
+            </div>
+            
+            {config.enableCheckerMaker && (
+               <div className="pt-6 border-t border-slate-200 animate-in slide-in-from-top-2 duration-300 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <InputGroup 
+                        label={`Approval Threshold (${config.currency})`} 
+                        type="number"
+                        value={config.checkerThreshold.toString()} 
+                        onChange={(v) => onChange({...config, checkerThreshold: parseFloat(v) || 0})} 
+                     />
+                     <SelectGroup 
+                        label="Designated Checker Role" 
+                        value={config.checkerRole} 
+                        onChange={(v) => onChange({...config, checkerRole: v})} 
+                        options={['manager', 'admin', 'finance_lead', 'director']} 
+                     />
+                  </div>
+                  
+                  <div>
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Trigger Actions</label>
+                     <div className="grid grid-cols-2 gap-4">
+                        {[
+                           { id: 'create', label: 'Asset Creation' },
+                           { id: 'update', label: 'Financial Updates' },
+                           { id: 'delete', label: 'Asset Deletion' },
+                           { id: 'user', label: 'User Role Changes' }
+                        ].map(action => (
+                           <div key={action.id} onClick={() => toggleAction(action.id)} className={`p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition-all ${config.checkerActions?.includes(action.id) ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center ${config.checkerActions?.includes(action.id) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                                 {config.checkerActions?.includes(action.id) && <Check className="w-3 h-3 text-white" />}
+                              </div>
+                              <span className="text-xs font-bold text-slate-700">{action.label}</span>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               </div>
+            )}
+         </div>
+
+         <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+               <div className="flex items-start gap-4 mb-4">
+                  <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
+                     <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">IP Restriction</h4>
+                     <p className="text-[10px] font-bold text-slate-400 mt-1">Limit access to corporate VPN/Office IPs only.</p>
+                  </div>
+               </div>
+               <div className="flex justify-end">
+                  <ToggleSwitch isOn={config.ipRestriction} onToggle={() => onChange({...config, ipRestriction: !config.ipRestriction})} />
+               </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+               <div className="flex items-start gap-4 mb-4">
+                  <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
+                     <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Audit Logging</h4>
+                     <p className="text-[10px] font-bold text-slate-400 mt-1">Immutable record of all system changes.</p>
+                  </div>
+               </div>
+               <div className="flex justify-end">
+                  <ToggleSwitch isOn={config.showEventLog} onToggle={() => onChange({...config, showEventLog: !config.showEventLog})} />
+               </div>
+            </div>
+         </div>
+      </div>
+   );
+};
+
 const CompanySettings = ({ config, onChange }: { config: DashboardConfig, onChange: (c: DashboardConfig) => void }) => {
    return (
     <div className="p-8 space-y-8">
@@ -245,17 +319,13 @@ const CompanySettings = ({ config, onChange }: { config: DashboardConfig, onChan
          <InputGroup label="Start Time" type="time" value={config.startTime} onChange={(v) => onChange({...config, startTime: v})} />
          <InputGroup label="End Time" type="time" value={config.endTime} onChange={(v) => onChange({...config, endTime: v})} />
          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 h-full">
-            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">IP Restriction</span>
-            <ToggleSwitch isOn={config.ipRestriction} onToggle={() => onChange({...config, ipRestriction: !config.ipRestriction})} />
+            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Tax Number</span>
+            <ToggleSwitch isOn={config.taxNumber} onToggle={() => onChange({...config, taxNumber: !config.taxNumber})} />
          </div>
       </div>
       
       <div className="grid md:grid-cols-2 gap-6">
          <InputGroup label="Timezone" value={config.timezone} onChange={(v) => onChange({...config, timezone: v})} />
-         <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 h-full">
-            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Tax Number</span>
-            <ToggleSwitch isOn={config.taxNumber} onToggle={() => onChange({...config, taxNumber: !config.taxNumber})} />
-         </div>
       </div>
     </div>
    );

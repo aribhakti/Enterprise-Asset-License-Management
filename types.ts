@@ -74,6 +74,19 @@ export interface Asset {
   };
 }
 
+export interface VendorProfile {
+  id: string;
+  name: string;
+  tier: 'Strategic' | 'Preferred' | 'Transactional' | 'Restricted';
+  contactName?: string;
+  contactEmail?: string;
+  website?: string;
+  supportEmail?: string;
+  notes?: string;
+  msaSigned?: boolean;
+  msaExpiry?: string;
+}
+
 export interface AuditLog {
   id: string;
   action: string;      
@@ -141,6 +154,7 @@ export interface DashboardConfig {
   enableCheckerMaker: boolean;
   checkerThreshold: number;
   checkerRole: string;
+  checkerActions: string[];
   
   language: string;
   enableRtl: boolean;
