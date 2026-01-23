@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
     <!-- Primary Meta Tags -->
     <title>SubGuard | Enterprise Asset & License Management</title>
@@ -13,13 +13,20 @@
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
     <meta name="author" content="SubGuard Inc.">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook / Meta Ads -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://subguard.io/">
     <meta property="og:title" content="SubGuard | Master Your Financial Perimeter">
     <meta property="og:description" content="Stop the bleeding. Start the control. The first unified registry for SaaS, Cloud, and Hardware assets.">
     <meta property="og:image" content="https://subguard.io/og-image.jpg">
+    <meta property="og:site_name" content="SubGuard">
+    <meta property="og:locale" content="en_US">
+    <!-- Placeholder for Meta Domain Verification -->
+    <meta name="facebook-domain-verification" content="your_verification_code_here" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -28,10 +35,15 @@
     <meta property="twitter:description" content="Stop the bleeding. Start the control. The first unified registry for SaaS, Cloud, and Hardware assets.">
     <meta property="twitter:image" content="https://subguard.io/og-image.jpg">
 
-    <!-- Performance: Preconnect -->
+    <!-- Performance: Resource Hints -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Preload Critical Fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" as="style">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -54,7 +66,14 @@
             color: #1e293b;
             overflow-x: hidden;
             margin: 0;
+            -webkit-tap-highlight-color: transparent;
         }
+        /* Performance: CSS Containment for long pages */
+        .content-visibility-auto {
+            content-visibility: auto;
+            contain-intrinsic-size: 1px 1000px; /* Approximation of section height */
+        }
+        
         /* Optimized Gradients */
         .mesh-gradient {
             background: 

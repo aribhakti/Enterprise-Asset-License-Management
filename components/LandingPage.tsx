@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Shield, CreditCard, Sparkles, ArrowRight, Wallet, Bell, Play, Zap, 
@@ -87,7 +86,7 @@ const TRANSLATIONS = {
       q5: { q: "Can I get alerts on Slack or Microsoft Teams?", a: "Yes. Our notification engine supports Email, Slack, Microsoft Teams, and even WhatsApp for critical renewal alerts." },
       q6: { q: "Do you charge per asset tracked?", a: "No. Our pricing is based on team members (admin users). You can track unlimited assets and vendors on all paid plans." },
       q7: { q: "I have a messy Excel sheet. Can you help?", a: "Our 'Smart Import' tool uses AI to map your columns automatically. If you have over 500 assets, our onboarding team will handle the migration for free." },
-      q8: { q: "Can SubGuard cancel a subscription for me?", a: "We provide the intelligence and the 'Cancel' workflow (templates, contact info), but for security, we do not execute the final cancellation transaction on your behalf." },
+      q8: { q: "Bisakah SubGuard membatalkan langganan?", a: "We provide the intelligence and the 'Cancel' workflow (templates, contact info), but for security, we do not execute the final cancellation transaction on your behalf." },
     },
     contact: {
       title: "Get in Touch",
@@ -127,7 +126,7 @@ const TRANSLATIONS = {
       tag: "Titik Buta Perusahaan",
       title: "Spreadsheet adalah",
       highlight: "Bunuh Diri Finansial.",
-      desc: "Mengelola aset jutaan dolar di lembar statis bukan hanya tidak efisien—itu kelalaian. Inilah yang terjadi tanpa sistem.",
+      desc: "Mengelola aset jutaan dolar di lembar statis bukan hanya tidak efisien—it's negligent. Inilah yang terjadi tanpa sistem.",
       c1: { t: "Jebakan Auto-Renew", d: "Melewatkan jendela pemberitahuan 60 hari? Selamat, Anda baru saja membeli setahun lagi software yang tidak Anda gunakan dengan kenaikan harga 10%." },
       c2: { t: "Lisensi Zombie", d: "Karyawan keluar, tetapi kursi $500/bln mereka tetap aktif. Kami biasanya menemukan 20-30% pengeluaran SaaS perusahaan terbuang sia-sia." },
       c3: { t: "Kepanikan Audit", d: "Auditor meminta bukti kepemilikan. Anda mengacak-acak email mencari PDF. Satu dokumen hilang bisa berharga ribuan dolar dalam denda." }
@@ -211,6 +210,24 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
 
   const t = TRANSLATIONS[lang];
   
+  // JSON-LD Structured Data for SEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "SubGuard",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": t.hero.desc,
+    "offers": {
+      "@type": "Offer",
+      "price": "49",
+      "priceCurrency": "USD",
+      "category": "Monthly Subscription"
+    },
+    "featureList": Object.values(t.features.cards).map((c: any) => c.t).join(", "),
+    "screenshot": "https://subguard.io/og-image.jpg"
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!heroCardRef.current) return;
     const { left, top, width, height } = heroCardRef.current.getBoundingClientRect();
@@ -228,11 +245,16 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
 
   return (
     <div className={`min-h-screen relative overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : 'bg-[#F8FAFC]'}`}>
+      
+      {/* Inject JSON-LD */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+
       {/* WhatsApp Floating Button */}
       <a 
         href="https://wa.me/628567234922" 
         target="_blank" 
         rel="noopener noreferrer"
+        aria-label="Chat with us on WhatsApp"
         className="fixed bottom-8 right-8 z-[100] bg-[#25D366] text-white p-4 rounded-full shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:bg-[#128C7E] transition-all hover:scale-110 flex items-center gap-2 group hover:shadow-[0_8px_30px_rgba(37,211,102,0.6)]"
       >
         <MessageCircle className="w-7 h-7 animate-bounce" />
@@ -250,26 +272,28 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
       <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
       
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b px-6 py-4 transition-all ${isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-white/50 hover:bg-white/95'}`}>
+      <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b px-6 py-4 transition-all ${isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-white/50 hover:bg-white/95'}`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3 group cursor-pointer" onClick={onTryNow}>
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={onTryNow} role="button" aria-label="Go to homepage">
             <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-xl flex items-center justify-center group-hover:bg-indigo-600 dark:group-hover:bg-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20 group-hover:rotate-12 group-hover:scale-110">
               <Zap className="w-5 h-5 text-white dark:text-slate-950" />
             </div>
             <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-fuchsia-500 transition-all">subguard</span>
           </div>
           
-          <div className="flex items-center gap-6">
+          <nav className="flex items-center gap-6">
             {/* Toggles */}
             <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-800 pr-6 mr-2">
                 <button 
                   onClick={() => setIsDarkMode(!isDarkMode)} 
+                  aria-label="Toggle Dark Mode"
                   className={`p-2 rounded-full transition-all hover:bg-slate-100 dark:hover:bg-slate-800 ${isDarkMode ? 'text-yellow-400' : 'text-slate-400'}`}
                 >
                   {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
                 <button 
                   onClick={() => setLang(lang === 'en' ? 'id' : 'en')}
+                  aria-label="Switch Language"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                 >
                   <Globe className="w-4 h-4" /> {lang}
@@ -278,15 +302,15 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
 
             <button onClick={onGetStarted} className="hidden sm:block text-xs font-black text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white uppercase tracking-widest transition-colors hover:scale-105">{t.nav.signIn}</button>
             <button onClick={onTryNow} className="hover-shine bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 px-6 py-2.5 rounded-xl text-[10px] font-black text-white transition-all shadow-lg shadow-indigo-200 dark:shadow-none uppercase tracking-widest active:scale-95 hover:-translate-y-0.5">{t.nav.access}</button>
-          </div>
+          </nav>
         </div>
-      </nav>
+      </header>
 
       {/* Hero Section */}
-      <section className="pt-48 pb-20 px-6 relative z-10">
+      <section className="pt-48 pb-20 px-6 relative z-10" id="hero">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
           <div className="space-y-10 relative z-10">
-            <div className="space-y-6">
+            <article className="space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 cursor-default">
                 <Shield className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t.hero.tag}
               </div>
@@ -297,13 +321,13 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
               <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed max-w-lg font-bold animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                 {t.hero.desc}
               </p>
-            </div>
+            </article>
             
             <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
-              <button onClick={onGetStarted} className="hover-shine bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-950 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all hover:shadow-2xl hover:-translate-y-1 group">
+              <button onClick={onGetStarted} aria-label="Initialize Registry" className="hover-shine bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-950 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all hover:shadow-2xl hover:-translate-y-1 group">
                 {t.hero.cta} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-fuchsia-400 dark:text-indigo-600" />
               </button>
-              <button onClick={onTryNow} className="px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition-all hover:shadow-inner">
+              <button onClick={onTryNow} aria-label="Watch Demo" className="px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition-all hover:shadow-inner">
                 <Play className="w-4 h-4 fill-current" /> {t.hero.demo}
               </button>
             </div>
@@ -344,8 +368,8 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
         </div>
       </section>
 
-      {/* Problem Section */}
-      <section className="py-24 bg-slate-900 dark:bg-slate-950 relative overflow-hidden group z-10">
+      {/* Problem Section - Content Visibility Auto for Performance */}
+      <section className="py-24 bg-slate-900 dark:bg-slate-950 relative overflow-hidden group z-10 content-visibility-auto" id="problem">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 group-hover:opacity-10 transition-opacity duration-1000"></div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-20">
@@ -377,8 +401,8 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
         </div>
       </section>
 
-      {/* Features Deep Dive Section */}
-      <section className="py-24 bg-white dark:bg-slate-900 relative z-10">
+      {/* Features Deep Dive Section - Content Visibility Auto */}
+      <section className="py-24 bg-white dark:bg-slate-900 relative z-10 content-visibility-auto" id="features">
         <div className="max-w-7xl mx-auto px-6">
            <div className="text-center mb-16">
               <span className="text-indigo-600 dark:text-indigo-400 font-black text-xs uppercase tracking-[0.3em] mb-4 block">{t.features.tag}</span>
@@ -399,8 +423,8 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-24 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 relative z-10">
+      {/* Pricing Section - Content Visibility Auto */}
+      <section className="py-24 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 relative z-10 content-visibility-auto" id="pricing">
          <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
                <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase mb-4">{t.pricing.title}</h2>
@@ -441,7 +465,7 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
       </section>
 
       {/* Stakeholder Alignment Section */}
-      <section className="py-32 relative overflow-hidden bg-slate-50/50 dark:bg-slate-900/50 z-10">
+      <section className="py-32 relative overflow-hidden bg-slate-50/50 dark:bg-slate-900/50 z-10 content-visibility-auto" id="stakeholders">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
            <div className="text-center mb-20">
@@ -494,8 +518,8 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-24 bg-slate-50 dark:bg-slate-950 relative z-10">
+      {/* FAQ Section - Content Visibility Auto */}
+      <section className="py-24 bg-slate-50 dark:bg-slate-950 relative z-10 content-visibility-auto" id="faq">
          <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <span className="text-indigo-600 dark:text-indigo-400 font-black text-xs uppercase tracking-[0.3em] mb-4 block">{t.faq.tag}</span>
@@ -519,7 +543,7 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-24 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 relative z-10">
+      <section className="py-24 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 relative z-10 content-visibility-auto" id="contact">
          <div className="max-w-7xl mx-auto px-6">
             <div className="grid md:grid-cols-2 gap-16">
                <div className="space-y-8">
@@ -573,7 +597,7 @@ export const LandingPage: React.FC<Props> = ({ onGetStarted, onTryNow }) => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-32 bg-slate-900 dark:bg-black relative overflow-hidden z-10">
+      <section className="py-32 bg-slate-900 dark:bg-black relative overflow-hidden z-10" id="cta">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-fuchsia-600/20 rounded-full blur-[100px] animate-pulse"></div>
         
@@ -635,7 +659,7 @@ const AlertItem = ({ title, desc, type }: { title: string, desc: string, type: '
 );
 
 const ProblemCard = ({ icon, title, desc, delay }: any) => (
-    <div 
+    <article 
       className={`bg-slate-800 dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-700 hover:border-indigo-500/50 transition-all duration-300 group hover:bg-slate-800/80 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards`}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -644,7 +668,7 @@ const ProblemCard = ({ icon, title, desc, delay }: any) => (
         </div>
         <h3 className="text-xl font-black text-white uppercase tracking-tight mb-4 group-hover:text-indigo-300 transition-colors">{title}</h3>
         <p className="text-slate-400 text-sm font-medium leading-relaxed group-hover:text-slate-300 transition-colors">{desc}</p>
-    </div>
+    </article>
 );
 
 const PersonaCard = ({ role, name, icon, id, quote, benefits, color, bg, border }: any) => {

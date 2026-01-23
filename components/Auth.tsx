@@ -146,26 +146,26 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
       <div className="w-full max-w-md relative z-10">
         <button 
           onClick={onBack}
-          className="mb-8 flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs font-black uppercase tracking-widest animate-in slide-in-from-left-4 duration-500"
+          className="mb-8 flex items-center gap-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-xs font-black uppercase tracking-widest animate-in slide-in-from-left-4 duration-500"
         >
           <ChevronLeft className="w-4 h-4" /> Back to Home
         </button>
 
-        <div className="bg-white/70 backdrop-blur-2xl p-10 rounded-[3rem] border border-white shadow-2xl relative overflow-hidden group animate-in zoom-in-95 duration-500">
+        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl p-10 rounded-[3rem] border border-white dark:border-slate-800 shadow-2xl relative overflow-hidden group animate-in zoom-in-95 duration-500">
           <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-indigo-100 transition-transform group-hover:scale-110 duration-500">
+            <div className="w-16 h-16 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-indigo-100 dark:shadow-none transition-transform group-hover:scale-110 duration-500">
               {mode === 'forgot' || mode === 'verify' ? <KeyRound className="w-8 h-8 text-white" /> : <Zap className="w-8 h-8 text-white" />}
             </div>
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-2">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">
               {mode === 'signin' && 'Welcome Back'}
               {mode === 'signup' && 'Create Account'}
               {mode === 'forgot' && 'Reset Password'}
               {mode === 'verify' && 'Secure Reset'}
             </h1>
-            <p className="text-slate-500 font-medium text-sm">
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
               {mode === 'signin' && 'Access your subscription vault.'}
               {mode === 'signup' && 'Start tracking your assets today.'}
               {mode === 'forgot' && 'Enter your email to receive a code.'}
@@ -174,14 +174,14 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
           </div>
 
           {error && (
-            <div className="mb-6 bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl flex items-start gap-3 text-xs font-bold animate-in slide-in-from-top-2">
+            <div className="mb-6 bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-900 text-rose-600 dark:text-rose-400 p-4 rounded-2xl flex items-start gap-3 text-xs font-bold animate-in slide-in-from-top-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               {error}
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-600 p-4 rounded-2xl flex items-start gap-3 text-xs font-bold animate-in slide-in-from-top-2">
+            <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl flex items-start gap-3 text-xs font-bold animate-in slide-in-from-top-2">
               <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
               {successMsg}
             </div>
@@ -198,7 +198,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="e.g. Alex Johnson"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-300"
                   />
                 </div>
               </div>
@@ -214,7 +214,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-300"
                   />
                 </div>
               </div>
@@ -235,7 +235,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-300"
                   />
                 </div>
               </div>
@@ -252,7 +252,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
                       value={resetCode}
                       onChange={(e) => setResetCode(e.target.value)}
                       placeholder="e.g. 1234"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300 tracking-widest"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-300 tracking-widest"
                     />
                   </div>
                 </div>
@@ -265,7 +265,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="New secure password"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 placeholder:text-slate-300"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-300"
                     />
                   </div>
                 </div>
@@ -275,7 +275,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-5 rounded-3xl transition-all shadow-xl shadow-slate-200 active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 text-white font-black py-5 rounded-3xl transition-all shadow-xl shadow-slate-200 dark:shadow-none active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -291,20 +291,20 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBack }) => {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
             {mode === 'signin' && (
               <button onClick={() => setMode('signup')} className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all">
-                Don't have an account? <span className="text-slate-900 font-black">Sign Up</span>
+                Don't have an account? <span className="text-slate-900 dark:text-white font-black">Sign Up</span>
               </button>
             )}
             {mode === 'signup' && (
               <button onClick={() => setMode('signin')} className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all">
-                Already have an account? <span className="text-slate-900 font-black">Sign In</span>
+                Already have an account? <span className="text-slate-900 dark:text-white font-black">Sign In</span>
               </button>
             )}
             {(mode === 'forgot' || mode === 'verify') && (
               <button onClick={() => setMode('signin')} className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-all">
-                Return to <span className="text-slate-900 font-black">Sign In</span>
+                Return to <span className="text-slate-900 dark:text-white font-black">Sign In</span>
               </button>
             )}
           </div>
